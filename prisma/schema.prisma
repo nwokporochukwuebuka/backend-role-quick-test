@@ -1,0 +1,44 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Wallet {
+  id        String   @id @default(uuid())
+  currency  String   @default("USD")
+  balance   Float    @default(0) // In production, use Decimal or Int (cents)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sentTransactions     Transaction[] @relation("Sender")
+  receivedTransactions Transaction[] @relation("Receiver")
+}
+
+model Transaction {
+  id     String @id @default(uuid())
+  amount Float
+  type   String // FUND or TRANSFER
+  status String @default("SUCCESS")
+
+  // Relations
+  senderWalletId String?
+  senderWallet   Wallet? @relation("Sender", fields: [senderWalletId], references: [id])
+
+  receiverWalletId String?
+  receiverWallet   Wallet? @relation("Receiver", fields: [receiverWalletId], references: [id])
+
+  // Bonus: Idempotency Key
+  idempotencyKey String? @unique
+
+  createdAt DateTime @default(now())
+}
